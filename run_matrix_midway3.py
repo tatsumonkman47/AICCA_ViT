@@ -64,8 +64,8 @@ lr_scheduler_flag = ["MultistepLR",
 ##################################
 
 
-LOG_DIR = [f"ViT_1M_{num_layers[0]}layers_{num_patches[0]}patches",
-           f"ViT_1M_{num_layers[1]}layers_{num_patches[1]}patches",
+LOG_DIR = [f"training_runs/ViT_1M_{num_layers[0]}layers_{num_patches[0]}patches",
+           f"training_runs/ViT_1M_{num_layers[1]}layers_{num_patches[1]}patches",
            ]
 print(LOG_DIR)
 
