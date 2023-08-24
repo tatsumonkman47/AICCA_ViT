@@ -3,8 +3,8 @@ Revisiting the AICCA cloud classification network using the Vision Transformer (
 
 This project is in it's beginning stages. I've organized this repository similarily to the directory on midway3 that I'm using to train/test new ViT architectures.
 
-
-A quick overview of how this directory is organized
+---------------------------------------------------
+# A quick overview of how this directory is organized:
 ---------------------------------------------------
 CURRENT MODEL: The current model can be found in the "AICCA_prototype.py" script. Various other scripts such as "AICCA_prototype_run[x].py" are used for hyperparemeter testing, and can be ignored for now.
 
@@ -17,10 +17,12 @@ DATA: The current scripts assume the data folder is present in the project direc
 PREVIOUS RUNS: previous runs are stored in the "training_runs" directory
 
 
-
-Other things to keep in mind
+----------------------------
+# Other things to keep in mind
 ----------------------------
 CONDA ENVIRONMENT: I put the conda environment.yml file in the project directory under the name "AICCA_pytorch.yml"
+
 DEPENDENCIES: Pytorch, Pytorch Lighting, cuda, numpy, 
+
 INTERNAL DEPENDENCIES: I use a helper function to load the AICCA patches (which are .npy files) into the datalaoders. The helper function is titled "import_numpy.py" and is in the main project directory
 
