@@ -1,3 +1,7 @@
+######################################################################################################
+######################################################################################################
+######################################################################################################
+######################################################################################################
 # Load Modules
 import os
 import numpy as np
@@ -16,7 +20,6 @@ import torch.nn.functional as F
 import torch.utils.data as data
 import torch.optim as optim
 
-
 # cuda setup, set seed for reproducability 
 def set_seed(seed):
     np.random.seed(seed)
@@ -33,39 +36,51 @@ torch.backends.cudnn.benchmark = False
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 print(f"Using device: {device}")
 
-
 # YOU NEED THIS TO LOAD PyTorch Lightning I DON"T KNOW WHY
-
 from jupyter_client.manager import KernelManager
-
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 # Set torch dtype to float64
 torch.set_default_dtype(torch.float64)
 
+from import_npy import npy_loader
+from torch.utils.data import DataLoader
+import torchvision
+from torchvision import datasets
+######################################################################################################
+######################################################################################################
+######################################################################################################
+######################################################################################################
+
+
+
+
+
+######################################################################################################
+######################################################################################################
 # Modules for loading data, set data pathimport urllib
 DATASET_PATH = "cloudimages1M" 
 CHECKPOINT_PATH = os.getcwd()
 DRIVE_PATH = "."
 
-LOG_DIR = "ViT_1Mlr1e-5" 
-training_checkpoint_path = f"/scratch/midway2/tdmonkman/AICCA_proj/ViT_1Mlr1e-5" 
+LOG_DIR = "ViT_1M_3layer_64patches" 
+training_checkpoint_path = f'/scratch/midway2/tdmonkman/AICCA_proj/ViT_1M_3layer_64patches' 
+# append ckpt file onto path
+if os.path.exists(training_checkpoint_path):
+    training_checkpoint_path_file = training_checkpoint_path + os.listdir(training_checkpoint_path)[0]
+else:
+    training_checkpoint_path_file = training_checkpoint_path + "none"
 import sys
 sys.path.append(f"{DRIVE_PATH}/")
 
-from import_npy import npy_loader
-
-
-from torch.utils.data import DataLoader
-import torchvision
-from torchvision import datasets
+######################################################################################################
+######################################################################################################
 
 # Here we use our custom function imported from the drive directory (import_npy.py)
 AICCA_data = datasets.DatasetFolder(root=f"{DRIVE_PATH}/{DATASET_PATH}",
                                     loader=npy_loader,
                                     extensions=tuple('.npy'))
-    
 
 print(AICCA_data)
 print("classes")
@@ -73,7 +88,7 @@ print(AICCA_data.classes)
 print("class_dict")
 print(AICCA_data.class_to_idx)
 
-# Data loader works her
+# Data loader works here
 # Split into train, validation, and test data
 train_length = int(0.7*len(AICCA_data))
 validation_length = int(0.2*len(AICCA_data))
@@ -88,14 +103,16 @@ print(f"size validation_dataset: {len(validation_dataset)}")
 print(f"size test_dataset: {len(test_dataset)}")
 
 # 
-train_loader = data.DataLoader(train_dataset, batch_size=128, shuffle=True, drop_last=False, pin_memory=True)
-val_loader = data.DataLoader(validation_dataset, batch_size=128, shuffle=False, drop_last=False, pin_memory=True)
-test_loader = data.DataLoader(test_dataset, batch_size=128, shuffle=False, drop_last=False, pin_memory=True)
+train_loader = data.DataLoader(train_dataset, batch_size=128, shuffle=True, drop_last=False, pin_memory=True,num_workers=4)
+val_loader = data.DataLoader(validation_dataset, batch_size=128, shuffle=False, drop_last=False, pin_memory=True,num_workers=4)
+test_loader = data.DataLoader(test_dataset, batch_size=128, shuffle=False, drop_last=False, pin_memory=True,num_workers=1)
 
 
 
 
-
+########################################################################################################
+########################################################################################################
+################################# FUNCTIONS FOR PROCESSING DATA ########################################
 ########################################################################################################
 ########################################################################################################
 # Function for preprocessing the images into patches
@@ -123,8 +140,40 @@ def imgs_to_patches(imgs, patch_size, flatten_channels=True):
     if flatten_channels:
         imgs = imgs.flatten(2,4)
     return imgs
-    
 
+
+########################################################################################################
+########################################################################################################
+# Function for preprocessing the images into patches, cutting out the annulus
+def imgs_to_patches_noannulus(imgs, patch_size, flatten_channels=True):
+    """
+    Inputs
+    ------
+    imgs: torch.Tensor containing the images of shape (Num Images, Channels, Height, Width)
+    patch_size: 
+    flatten_channels: False
+    
+    Outputs
+    -------
+    imgs: 
+    """
+    # Reshape the image tensor to shape (image, channel, height, width) 
+    imgs = imgs.permute(0,3,1,2)[:,:,19:109,19:109]
+    B, C, H, W = imgs.shape
+    # Divide images into patches
+    imgs = imgs.reshape(B, C, H//patch_size, patch_size, W//patch_size, patch_size)
+    # Reshape images to shape (image, patch, channel, height, width)
+    imgs = imgs.permute(0,2,4,1,3,5)
+    imgs = imgs.flatten(1,2)
+    # You can flatten the patches into a "feature vector" if you would like
+    if flatten_channels:
+        imgs = imgs.flatten(2,4)
+    return imgs
+
+
+########################################################################################################
+########################################################################################################
+################################# MODEL FUNCTIONS ######################################################
 ########################################################################################################
 ########################################################################################################
 class AttentionBlock(nn.Module):
@@ -242,7 +291,7 @@ from lightning_fabric.utilities import optimizer
 
 class ViT(pl.LightningModule):
 
-    def __init__(self, model_kwargs, lr):
+    def __init__(self, model_kwargs, lr, lr_scheduler_flag="CosineAnnealingLR"):
         super().__init__()
         self.save_hyperparameters()
         self.model = VisionTransformer(**model_kwargs)
@@ -250,10 +299,12 @@ class ViT(pl.LightningModule):
 
     def forward(self, x):
         return self.model(x)
-
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr)
-        lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100,150], gamma=0.1)
+        if self.hparams.lr_scheduler_flag == "CosineAnnealingLR":
+            lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, 20000, )
+        else:
+            lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100,150], gamma=0.1)
         return [optimizer], [lr_scheduler]
 
     def _calculate_loss(self, batch, mode="train"):
@@ -261,10 +312,8 @@ class ViT(pl.LightningModule):
         preds = self.model(imgs)
         loss = F.cross_entropy(preds, labels)
         acc = (preds.argmax(dim=-1) == labels).float().mean()
-
         self.log(f'{mode}_loss', loss)
         self.log(f'{mode}_acc', acc)
-        
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -278,7 +327,7 @@ class ViT(pl.LightningModule):
         self._calculate_loss(batch, mode="test")
 
 
-def train_model(training_checkpoint_path, **kwargs):
+def train_model(training_checkpoint_path_file, **kwargs):
     trainer = pl.Trainer(default_root_dir=os.path.join(CHECKPOINT_PATH, LOG_DIR),
                          accelerator="gpu" if str(device).startswith("cuda") else "cpu",
                          devices=1,
@@ -290,16 +339,14 @@ def train_model(training_checkpoint_path, **kwargs):
 
     # Check whether pretrained model exists. If yes, load it and skip training
     pretrained_filename = os.path.join(CHECKPOINT_PATH, "last.ckpt")
-    if os.path.isfile(pretrained_filename):
+    if os.path.exists(pretrained_filename):
         print(f"Found pretrained model at {pretrained_filename}, loading...")
         model = ViT.load_from_checkpoint(pretrained_filename) # Automatically loads the model with the saved hyperparameters
-    
-    elif os.path.isfile(training_checkpoint_path):
-        print(f"Found checkpoint at {training_checkpoint_path}")
-        model = ViT.load_from_checkpoint(training_checkpoint_path) # Load best checkpoint after training
+    elif os.path.exists(training_checkpoint_path_file):
+        print(f"Found checkpoint at {training_checkpoint_path_file}")
+        model = ViT.load_from_checkpoint(training_checkpoint_path_file) # Load best checkpoint after training
         trainer.fit(model, train_loader, val_loader)
         model = ViT.load_from_checkpoint(trainer.checkpoint_callback.best_model_path) # Load best checkpoint after training
-
     else:
         print("Running from scratch")
         #pl.seed_everything(42) # To be reproducable
@@ -314,21 +361,23 @@ def train_model(training_checkpoint_path, **kwargs):
 
     return model, result
 
-########################################################################################################
-########################################################################################################
+#######################################################################################################
+#######################################################################################################
+############################## EDIT HYPERPARAMTERS, RUN MODEL  ########################################
+#######################################################################################################
+#######################################################################################################
 
-
-
-model, results =     train_model( training_checkpoint_path, model_kwargs={
+model, results =     train_model( training_checkpoint_path_file, model_kwargs={
                                     'embed_dim': 256,
                                     'hidden_dim': 512,
                                     'num_heads': 8,
-                                    'num_layers': 6,
-                                    'patch_size': 16,
+				'num_layers':3, # number of layers in attention block 
+				'patch_size':16, # patch size 
                                     'num_channels': 6,
-                                    'num_patches': 64,
+				'num_patches':64, # num patches 
                                     'num_classes': 43,
                                     'dropout': 0.2
- 			 }, lr=1e-05,) #LEARNING RATE FLAG
-
-print("ViT results", results)
+                                 }, 
+				 lr=0.0001, #LEARNING RATE FLAG 
+				 lr_scheduler_flag='MultistepLR', # LR SCHEDULER FLAG 
+                                )
