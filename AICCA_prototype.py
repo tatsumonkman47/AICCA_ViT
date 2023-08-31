@@ -64,8 +64,8 @@ DATASET_PATH = "cloudimages1M"
 CHECKPOINT_PATH = os.getcwd()
 DRIVE_PATH = "."
 
-LOG_DIR = "ViT_1M_3layer_64patches" 
-training_checkpoint_path = f'/scratch/midway2/tdmonkman/AICCA_proj/ViT_1M_3layer_64patches' 
+LOG_DIR = "ViT_1M_3layers_256patches" 
+training_checkpoint_path = f'/scratch/midway2/tdmonkman/AICCA_proj/ViT_1M_3layers_256patches' 
 # append ckpt file onto path
 if os.path.exists(training_checkpoint_path):
     training_checkpoint_path_file = training_checkpoint_path + os.listdir(training_checkpoint_path)[0]
@@ -88,7 +88,7 @@ print(AICCA_data.classes)
 print("class_dict")
 print(AICCA_data.class_to_idx)
 
-# Data loader works here
+# Data loader works her
 # Split into train, validation, and test data
 train_length = int(0.7*len(AICCA_data))
 validation_length = int(0.2*len(AICCA_data))
@@ -110,9 +110,7 @@ test_loader = data.DataLoader(test_dataset, batch_size=128, shuffle=False, drop_
 
 
 
-########################################################################################################
-########################################################################################################
-################################# FUNCTIONS FOR PROCESSING DATA ########################################
+
 ########################################################################################################
 ########################################################################################################
 # Function for preprocessing the images into patches
@@ -171,9 +169,11 @@ def imgs_to_patches_noannulus(imgs, patch_size, flatten_channels=True):
     return imgs
 
 
+    
+
 ########################################################################################################
 ########################################################################################################
-################################# MODEL FUNCTIONS ######################################################
+#####################################  MODEL ###########################################################
 ########################################################################################################
 ########################################################################################################
 class AttentionBlock(nn.Module):
@@ -227,7 +227,7 @@ class AttentionBlock(nn.Module):
 ########################################################################################################
 class VisionTransformer(nn.Module):
     
-    def __init__(self, embed_dim, hidden_dim, num_channels, num_heads, num_layers, num_classes, patch_size, num_patches, dropout=0.0):
+    def __init__(self, embed_dim, hidden_dim, num_channels, num_heads, num_layers, num_classes, patch_size, num_patches, num_mlp_layers, dropout=0.0):
         """
         Inputs
         ------
@@ -240,6 +240,7 @@ class VisionTransformer(nn.Module):
         num_classes: Number of classes to predict
         patch_size: Number of pixels that the patches have per dimension
         num_patches: Maximum number of patches an image can have
+        num_mlp_layers: Number of layers to use in the MLP head
         dropout: Amount of dropout to apply in the feed-forward network and
                   on the input encoding
         
@@ -254,10 +255,9 @@ class VisionTransformer(nn.Module):
         # Layers/Networks
         self.input_layer = nn.Linear(num_channels*(patch_size**2), embed_dim)
         self.transformer = nn.Sequential(*[AttentionBlock(embed_dim, hidden_dim, num_heads, dropout=dropout) for layer in range(num_layers)])
-        self.mlp_head = nn.Sequential(
-            nn.LayerNorm(embed_dim),
-            nn.Linear(embed_dim, num_classes)
-        )
+        # increase the number of mlp_layers (adding extra layers with embed_dim dimensions)
+        self.mlp_head = nn.Sequential(*([nn.LayerNorm(embed_dim), nn.Linear(embed_dim, embed_dim)]*(num_mlp_layers-1)
+                                       + [nn.LayerNorm(embed_dim), nn.Linear(embed_dim, num_classes)]))
         self.dropout = nn.Dropout(dropout)
         
         # Parameters/Embeddings
@@ -361,23 +361,25 @@ def train_model(training_checkpoint_path_file, **kwargs):
 
     return model, result
 
-#######################################################################################################
-#######################################################################################################
-############################## EDIT HYPERPARAMTERS, RUN MODEL  ########################################
-#######################################################################################################
-#######################################################################################################
+########################################################################################################
+########################################################################################################
+
+
+
+
 
 model, results =     train_model( training_checkpoint_path_file, model_kwargs={
                                     'embed_dim': 256,
                                     'hidden_dim': 512,
                                     'num_heads': 8,
-				'num_layers':3, # number of layers in attention block 
-				'patch_size':16, # patch size 
+									'num_layers':3, # number of layers in attention block 
+									'patch_size':8, # patch size 
                                     'num_channels': 6,
-				'num_patches':64, # num patches 
+									'num_patches':256, # num patches 
                                     'num_classes': 43,
-                                    'dropout': 0.2
+                                    'dropout': 0.2,
+                                    'num_mlp_layers': 1,
                                  }, 
-				 lr=0.0001, #LEARNING RATE FLAG 
-				 lr_scheduler_flag='MultistepLR', # LR SCHEDULER FLAG 
+									 lr=0.0001, #LEARNING RATE FLAG 
+									 lr_scheduler_flag='MultistepLR', # LR SCHEDULER FLAG 
                                 )
