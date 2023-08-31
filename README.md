@@ -1,7 +1,8 @@
 # AICCA_ViT
 Revisiting the AICCA cloud classification network using the Vision Transformer (ViT)
+This project is an modification of the network used to generate [AI-Driven Cloud Classification Atlas](https://www.mdpi.com/2072-4292/14/22/5690), an unsupervised cloud classification system based off of Takuya Kurihana's PhD work.
 
-This project is in it's beginning stages. I've organized this repository similarily to the directory on midway3 that I'm using to train/test new ViT architectures.
+This project is in it's beginning stages. I've organized this repository similarily to the directory on midway3 that I'm using to train/test new ViT architectures. We haven't added unsupervised clustering yet.
 
 
 # A quick overview of how this directory is organized
