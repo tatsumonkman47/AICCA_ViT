@@ -8,7 +8,6 @@ This project is an modification of the network used to generate [AI-Driven Cloud
 AICCA ViT is in it's early stages, and this repository is mostly for me and Takuya to prototype. I've organized this repository similarily to the directory on midway3 that I'm using to train/test new ViT architectures. We haven't added unsupervised clustering yet.
 
 
-## A quick overview of how this directory is organized
 ---------------------------------------------------
 #### Current Model
 The current model can be found in the "AICCA_prototype.py" script. Various other scripts such as "AICCA_prototype_run[x].py" are used for hyperparemeter testing, and can be ignored for now.
@@ -27,7 +26,7 @@ Previous training runs are stored in the "training_runs" directory. I've tried t
 
 
 
-# Other things to keep in mind
+## Other things to keep in mind
 ----------------------------
 #### Conda Environment
 I put the conda environment.yml file in the project directory under the name "AICCA_pytorch.yml"
@@ -35,4 +34,12 @@ I put the conda environment.yml file in the project directory under the name "AI
 Pytorch, Pytorch Lighting, cuda, numpy, 
 #### Internal Dependencies
 I use a helper function to load the AICCA patches (which are .npy files) into the datalaoders. The helper function is titled "import_numpy.py" and is located in the main project directory.
+
+## Model evaluations
+----------------------------
+Model eval plots are in "evaluation_figures"
+
+Example:
+![alt_text](https://github.com/tatsumonkman47/AICCA_ViT/blob/master/evaluation_figures/ViT_1M_3layers_256patches_8heads_3mlp_layers_vs_ViT_1M_2layers_256patches_8heads_3mlp_layers.png)
+
 
