@@ -1,3 +1,5 @@
+![alt text](https://github.com/tatsumonkman47/AICCA_ViT/blob/master/evaluation_figures/example_patches0.png)
+
 # AICCA_ViT
 Revisiting the AICCA cloud classification network using the Vision Transformer (ViT).
 
