@@ -39,7 +39,17 @@ I use a helper function to load the AICCA patches (which are .npy files) into th
 ----------------------------
 Model eval plots are in "evaluation_figures"
 
-Example:
+1 transformer layer, 64 patches vs 2 transformer layers, 256 patches:
+![alt_text](https://github.com/tatsumonkman47/AICCA_ViT/blob/master/evaluation_figures/ViT_1M_1layers_64patches_vs_ViT_1M_2layer_256patches.png)
+
+3 transformer layers, 256 patches vs 2 transformer layers, 256 patches:
+![alt_text](https://github.com/tatsumonkman47/AICCA_ViT/blob/master/evaluation_figures/ViT_1M_3layers_256patches_vs_ViT_1M_2layers_256patches.png)
+
+2 transformer layers, 256 patches, 16 heads, 1 mlp layer vs 2 transformer layers, 256 patches, 8 heads, 3 mlp layers:
+![alt_text](https://github.com/tatsumonkman47/AICCA_ViT/blob/master/evaluation_figures/ViT_1M_2layers_256patches_16heads_1mlp_layers_vs_ViT_1M_2layers_256patches_8heads_3mlp_layers.png)
+
+2 transformer layers, 64 patches, 8 heads, 3 mlp layers, vs 2 transformer layers, 256 patches, 8 heads, 3 mlp layers:
+![alt_text](https://github.com/tatsumonkman47/AICCA_ViT/blob/master/evaluation_figures/ViT_1M_2layers_64patches_8heads_3mlp_layers_vs_ViT_1M_2layers_256patches_8heads_3mlp_layers.png)
+
+3 transformer layers, 256 patches, 8 heads, 3 mlp layers vs 2 transformer layers, 256 patches, 8 heads, 3 mlp layers:
 ![alt_text](https://github.com/tatsumonkman47/AICCA_ViT/blob/master/evaluation_figures/ViT_1M_3layers_256patches_8heads_3mlp_layers_vs_ViT_1M_2layers_256patches_8heads_3mlp_layers.png)
-
-
